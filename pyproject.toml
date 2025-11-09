@@ -1,0 +1,10 @@
+[tool.black]
+line-length = 88
+target-version = ['py313']
+
+[tool.ruff]
+select = ["E", "F", "I", "UP", "N", "ANN"]
+ignore = ["ANN101"]
+
+[tool.mypy]
+strict = true

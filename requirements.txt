@@ -1,0 +1,11 @@
+playwright
+pandas
+xlsxwriter
+tk
+pyyaml
+pytest
+pytest-mock
+hypothesis
+colorama
+openpyxl
+pillow

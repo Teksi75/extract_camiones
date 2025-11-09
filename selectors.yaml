@@ -1,0 +1,149 @@
+# selectors.yaml
+# Mapa de etiquetas alternativas del portal MetroWeb (INTI).
+# La idea es NO “cablear” textos en el código: el scraper lee estas
+# variantes y prueba en orden hasta encontrar la que esté en pantalla.
+
+version: 1
+updated: 2025-11-01
+notes:
+  - "Si cambian textos en MetroWeb, agregar nuevas variantes aquí sin tocar el código."
+  - "El scraper usará la primera coincidencia disponible por cada campo."
+
+pages:
+  resumen_jsp:
+    ot:
+      - "Nro OT"
+      - "N° OT"
+      - "Número de O.T."
+      - "Numero de O.T."
+      - "Número OT"
+      - "Nmero OT"
+    vpe_inline:
+      - "Número:"
+      - "Numero:"
+      - "N°:"
+    empresa_solicitante:
+      - "Empresa Solicitante"
+      - "Solicitante"
+    usuario_representado:
+      - "Usuario Representado"
+      - "Usuario representado"
+
+  detalle_jsp:
+    nombre_usuario_instrumento:
+      - "Nombre del Usuario del Instrumento"
+      - "Nombre del Usuario del instrumento"
+      - "Nombre del Usuario del equipo"
+      - "Nombre del Usuario"
+    direccion_legal:
+      - "Dirección Legal"
+      - "Dirección legal"
+      - "Direccion Legal"
+      - "Direccion legal"
+
+  instrumento_detalle_do:
+    domicilio_instalacion:
+      - "Domicilio"
+      - "Dirección de Instalación"
+    codigo_aprobacion:
+      - "Código de Aprobación de Modelo"
+      - "Código de Aprobación"
+      - "Codigo de Aprobación"
+      - "Codigo de Aprobacion"
+    nro_serie:
+      - "Nro de serie"
+      - "N° de serie"
+      - "Número de serie"
+    enlaces_modelo:
+      css_selector: "a[href*='modeloDetalle.do']"
+
+  modelo_detalle_do:
+    modelo:
+      - "Modelo Aprobado"
+      - "Modelo"
+    marca:
+      - "Marca"
+    fabricante:
+      - "Fabricante/Importador"
+      - "Fabricante"
+      - "Importador"
+    origen:
+      - "País Origen"
+      - "País de Origen"
+      - "País  Origen"
+      - "Origen"
+    n_aprob:
+      - "Nº Disposicion"
+      - "N° Disposicion"
+      - "Nº Disposición"
+      - "N° Disposición"
+      - "Nº Disposici"
+      - "N° Disposici"
+      - "N° de Aprobación"
+      - "Nº de Aprobación"
+      - "Nº Disp"
+      - "N° Disp"
+    fecha_aprob:
+      - "Fecha Aprobación"
+      - "Fecha de Aprobación"
+    tipo_instrumento:
+      - "Tipo Instrumento"
+      - "Tipo de Instrumento"
+    max:
+      - "Máximo"
+      - "Capacidad Máx."
+      - "Capacidad máxima"
+    min:
+      - "Mínimo"
+      - "Capacidad Mín."
+      - "Capacidad mínima"
+    e:
+      - "e"
+    dd_dt:
+      - "dd=dt"
+      - "dt"
+      - "dd"
+      - "d"
+    clase:
+      - "Clase"
+    codigo_aprobacion:
+      - "Código Aprobación"
+      - "Codigo Aprobación"
+      - "Codigo Aprobacion"
+
+export:
+  # Orden de columnas esperado en el Excel/DF.
+  columnas:
+    - "Número de O.T."
+    - "VPE Nº"
+    - "Empresa solicitante"
+    - "Razón social (Propietario)"
+    - "Domicilio (Fiscal)"
+    - "Localidad (Fiscal)"
+    - "Provincia (Fiscal)"
+    - "Lugar propio de instalación - Domicilio"
+    - "Lugar propio de instalación - Localidad"
+    - "Lugar propio de instalación - Provincia"
+    - "Instrumento verificado"
+    - "Fabricante receptor"
+    - "Marca Receptor"
+    - "Modelo Receptor"
+    - "N° de serie Receptor"
+    - "Cód ap. mod. Receptor"
+    - "Origen Receptor"
+    - "e"
+    - "máx"
+    - "mín"
+    - "dd=dt"
+    - "clase"
+    - "N° de Aprobación Modelo (Receptor)"
+    - "Fecha de Aprobación Modelo (Receptor)"
+    - "Tipo (Indicador)"
+    - "Fabricante Indicador"
+    - "Marca Indicador"
+    - "Modelo Indicador"
+    - "N° de serie Indicador"
+    - "Código Aprobación (Indicador)"
+    - "Origen Indicador"
+    - "N° de Aprobación Modelo (Indicador)"
+    - "Fecha de Aprobación Modelo (Indicador)"
