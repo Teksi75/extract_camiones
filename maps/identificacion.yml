@@ -1,0 +1,40 @@
+# Mapeo campo → celda para la hoja "Identificación del Instrumento"
+# NOTA: usar espacios (no tabs). Cada línea es "clave": "celda".
+
+"Numero de O.T.": "B3"
+"VPE Nº": "C4"
+
+"Razón social (Propietario)": "B12"
+"Domicilio (Fiscal)": "B13"
+
+"Tipo de Verificación": "B16"
+"Tolerancia": "F16"
+
+"Lugar propio de instalación - Domicilio": "B20"
+"Lugar propio de instalación - Localidad": "B21"
+"Lugar propio de instalación - Provincia": "F21"
+
+"Instrumento verificado": "B23"
+
+"Fabricante receptor": "B25"
+"Marca Receptor": "B27"
+"Modelo Receptor": "B28"
+"N° de serie Receptor": "B29"
+"Cód ap. mod. Receptor": "B30"
+"Origen Receptor": "B31"
+
+"Tipo (Indicador)": "F23"
+"Marca Indicador": "F27"
+"Modelo Indicador": "F28"
+"N° de serie Indicador": "F29"
+"Origen Indicador": "F31"
+
+"e": "C34"
+"máx": "D35"
+"mín": "D37"
+"dd=dt": "H34"
+"clase": "F37"
+
+"Código Aprobación (Indicador)": "F40"
+"N° de Aprobación Modelo (Indicador)": "F41"
+"Fecha de Aprobación Modelo (Indicador)": "F42"
