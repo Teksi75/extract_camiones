@@ -1,3 +1,9 @@
+[project]
+name = "extract_camiones"
+version = "0.4.1"
+description = "Extractor de datos MetroWeb → Excel (INTI)"
+requires-python = ">=3.13"
+
 [tool.black]
 line-length = 88
 target-version = ['py313']

@@ -15,6 +15,7 @@ Ejecución recomendada:
 # --- bootstrap robusto del proyecto (permite ejecutar este archivo "a pelo") ---
 import sys
 from pathlib import Path
+from src.version import APP_VERSION
 
 
 def find_project_root(markers=("pyproject.toml", "requirements.txt", ".git")) -> Path:
@@ -45,7 +46,9 @@ from tkinter import filedialog, messagebox, scrolledtext, ttk
 
 APP_NAME = "INTI METROWEB"
 APP_SUBTITLE = "Extractor de datos (Alpha)"
-APP_VERSION = "v0.4.0"
+# Versión tomada automáticamente desde pyproject.toml (src/version.py)
+# Ejemplo: APP_VERSION = "v0.4.0"
+
 
 # Paleta
 BG = "#f5f6f8"
