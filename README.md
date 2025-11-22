@@ -23,14 +23,17 @@ Permite obtener información de las **balanzas para camiones/plataforma**, inclu
 ## 📂 Estructura del proyecto
 
 extract_camiones/
-├── assets/ # Recursos gráficos
-│ └── balanza.png
+├── assets/                 # Recursos gráficos usados por la GUI
+│   └── balanza.png
 ├── src/
-│ ├── domain/ # Lógica de dominio (modelos, direcciones)
-│ ├── portal/ # Scraper MetroWeb
-│ ├── io/ # Exportadores Excel
-│ └── ui/ # Interfaz gráfica (GUI)
-├── tools/ # Utilidades y scripts de build
-├── selectors.yaml # Mapeo de selectores MetroWeb
-├── requirements.txt # Dependencias mínimas
-└── pyproject.toml # Configuración de build
+│   ├── cli.py              # Entrypoint de línea de comandos
+│   ├── domain/             # Modelos de dominio y helpers de direcciones
+│   ├── io/                 # Exportadores (Excel)
+│   ├── portal/             # Scraper de MetroWeb basado en Playwright
+│   ├── ui/                 # Interfaz gráfica y herramientas de merge
+│   └── version.py          # Datos de versionado de la aplicación
+├── tests/                  # Pruebas unitarias e integraciones básicas
+├── tools/                  # Utilidades de mantenimiento y build
+├── selectors.yaml          # Mapeo de selectores MetroWeb
+├── requirements.txt        # Dependencias mínimas
+└── pyproject.toml          # Configuración de build
