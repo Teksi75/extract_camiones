@@ -1,6 +1,6 @@
 [project]
 name = "extract_camiones"
-version = "0.4.1"
+version = "0.4.4"
 description = "Extractor de datos MetroWeb → Excel (INTI)"
 requires-python = ">=3.13"
 

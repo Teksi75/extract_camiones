@@ -41,6 +41,7 @@ from typing import Callable, Optional
 
 import tkinter as tk
 from tkinter import filedialog, messagebox, scrolledtext, ttk
+from openpyxl import load_workbook
 
 # ================== Config de app/estilos ==================
 
@@ -48,6 +49,7 @@ APP_NAME = "INTI METROWEB"
 APP_SUBTITLE = "Extractor de datos (Alpha)"
 # Versión tomada automáticamente desde pyproject.toml (src/version.py)
 # Ejemplo: APP_VERSION = "v0.4.0"
+TEMPLATE_CAMION_PATH = ROOT / "assets" / "plantilla_camion.xlsx"
 
 
 # Paleta
@@ -78,12 +80,13 @@ except Exception as _e:  # pragma: no cover
 
 try:
     from src.io.excel_exporter import (
+        DATE_FIELDS,
         armar_hoja_verificacion_2columnas,
-        exportar_verificacion_2columnas,
+        _fecha_castellano,
     )
 except Exception as _e:  # pragma: no cover
     _MISSING_DEPS.append(
-        "src.io.excel_exporter (faltan armar_hoja_verificacion_2columnas/exportar_verificacion_2columnas)"
+        "src.io.excel_exporter (faltan armar_hoja_verificacion_2columnas y dependencias asociadas)"
     )
 
 try:
@@ -519,7 +522,7 @@ class ExtractorGUI:
         finally:
             self._enable_ui(True)
 
-    # ---------- Guardado (export simple 2 columnas) ----------
+    # ---------- Guardado (plantilla con "datos vpe") ----------
     def _save_dialog(self) -> None:
         ot = self.var_ot.get().strip()
         razon = (
@@ -542,18 +545,10 @@ class ExtractorGUI:
             return
 
         try:
-            self._log("Generando Excel (2 columnas)…")
-            df = armar_hoja_verificacion_2columnas(self._filas)
-            ruta = exportar_verificacion_2columnas(df, Path(path))
+            self._log("Rellenando plantilla de Excel…")
+            ruta = self._exportar_en_plantilla(Path(path))
             size_kb = ruta.stat().st_size / 1024
             self._log(f"Archivo guardado: {ruta.resolve()} ({size_kb:.2f} KB)")
-
-            # Ofrecer anexar al Excel base inmediatamente
-            if append_sheet_as_first is not None and messagebox.askyesno(
-                "Anexar a Excel base",
-                "¿Querés anexar esta hoja como 'datos vpe' en una COPIA de un Excel base ahora?",
-            ):
-                self._merge_into_base(df)
 
             if messagebox.askyesno(
                 "Éxito",
@@ -569,6 +564,45 @@ class ExtractorGUI:
             messagebox.showerror("Error al guardar", str(e))
         finally:
             self._set_progress_pct(0, "Listo para una nueva extracción")
+
+    def _exportar_en_plantilla(self, destino: Path) -> Path:
+        if not self._filas:
+            raise RuntimeError(
+                "Todavía no hay datos de extracción. Ejecutá la extracción primero."
+            )
+
+        template_path = TEMPLATE_CAMION_PATH
+        if not template_path.exists():
+            raise FileNotFoundError(
+                f"No se encontró la plantilla base en: {template_path.resolve()}"
+            )
+
+        wb = load_workbook(template_path)
+        if "datos vpe" not in wb.sheetnames:
+            raise ValueError("La plantilla no contiene la hoja 'datos vpe'.")
+
+        ws = wb["datos vpe"]
+        instrumento = dict(self._filas[0])
+
+        # Normalizar fechas relevantes al formato castellano esperado
+        for campo in DATE_FIELDS:
+            if campo in instrumento:
+                instrumento[campo] = _fecha_castellano(str(instrumento.get(campo, "")))
+
+        for row in ws.iter_rows(min_row=1, max_row=ws.max_row, max_col=1):
+            cell_campo = row[0]
+            campo = cell_campo.value
+            if campo is None:
+                continue
+            valor = instrumento.get(str(campo), "")
+            if valor is None:
+                valor = ""
+            ws.cell(row=cell_campo.row, column=2, value=valor)
+
+        destino = destino.with_suffix(".xlsx")
+        destino.parent.mkdir(parents=True, exist_ok=True)
+        wb.save(destino)
+        return destino
 
     # ---------- Anexar a Excel base (botón) ----------
     def _cmd_agregar_a_excel_base(self) -> None:
