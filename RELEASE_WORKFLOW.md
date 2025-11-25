@@ -67,16 +67,19 @@ Agregar y commitear:
 
 ```bash
 git add pyproject.toml
-git commit -m "Bump version to X.Y.Z"
+ to X.Y.Z"
 ```
 
 Subir a GitHub:
 
 ```bash
-git push
+git pushgit commit -m "Bump version
 ```
 
 ---
+git add RELEASE_WORKFLOW.md
+git commit -m "Aclara pasos de commit en el workflow de release"
+git push
 
 ## ✅ **4. Crear el tag correspondiente a la versión**
 

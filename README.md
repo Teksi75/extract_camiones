@@ -1,49 +1,52 @@
-# 🏭 Extractor de datos MetroWeb → Excel (INTI)
+# Extractor de datos MetroWeb -> Excel (INTI)
 
-**Versión actual:** Alpha 0.4.0
-**Autor:** Pablo J. Siklosi  
-****  
+Version actual: 0.4.4
+Autor: Pablo J. Siklosi
 
-Aplicación desarrollada en Python para **extraer automáticamente los datos de Verificación Previa** desde el portal **MetroWeb (INTI)** y volcarlos en un archivo **Excel estructurado**.  
-Permite obtener información de las **balanzas para camiones/plataforma**, incluyendo detalles del instrumento, modelo, aprobación, fabricante y propietario.
+Aplicacion en Python para extraer automaticamente los datos de Verificacion Previa desde el portal MetroWeb (INTI) y volcarlos en un Excel estructurado. Incluye un flujo GUI con barra de progreso y logs en vivo, y utilidades para versionar y generar releases distribuidos.
 
----
+## Requisitos
+- Windows 10/11
+- Python 3.13 o superior
+- Dependencias de `requirements.txt` (incluye Playwright, pandas, xlsxwriter, etc.)
+- Navegador Playwright: `python -m playwright install chromium`
 
-## 🚀 Características principales
+## Instalacion rapida
+1) Clonar el repositorio y ubicarse en la raiz del proyecto.
+2) Crear y activar el entorno: `python -m venv .venv` y luego `./.venv/Scripts/Activate.ps1` (o equivalente en tu shell).
+3) Instalar dependencias: `pip install -r requirements.txt`.
+4) Instalar el navegador de Playwright si aun no se hizo: `python -m playwright install chromium`.
 
-- ✅ **Extracción automática** desde MetroWeb mediante Playwright (Chromium).  
-- 💾 **Exportación directa a Excel** en formato de dos columnas (*Campo | Valor*).  
-- 🧩 **Interfaz gráfica (GUI)** moderna con barra de progreso y registro en tiempo real.  
-- 🧠 **Procesamiento multi-instrumento:** reconoce múltiples instrumentos dentro de una misma OT.  
-- 🧱 **Arquitectura modular:** separa la lógica de scraping, exportación y GUI.  
-- 🔒 Compatible con **Windows 10/11** y **Python 3.11–3.13**.
+## Uso
+### Ejecutar la GUI
+- Desde la raiz del proyecto (con el entorno activado):
+  ```bash
+  python -m src.ui.gui
+  ```
+- Se abrira la interfaz grafica para lanzar el scraping y generar el Excel usando la plantilla de `assets/`.
 
----
+### Scripts de mantenimiento
+- `python -m tools.bump_version`: incrementa en +1 el ultimo componente de `version` en `pyproject.toml` (por ejemplo, 0.4.4 -> 0.4.5). Ejecutalo siempre desde la raiz del repo.
+- `python -m tools.make_release`: genera un ZIP listo para distribuir dentro de `tools/dist/`, excluyendo tests y artefactos temporales. Usa la version de `pyproject.toml` para nombrar el archivo.
 
-## 📂 Estructura del proyecto
+### Flujo de release sugerido
+1) Actualizar la version: `python -m tools.bump_version`.
+2) Opcional: ejecutar pruebas rapidas si aplica.
+3) Empaquetar: `python -m tools.make_release` (el ZIP se guarda en `tools/dist/`).
 
-extract_camiones/
-├── assets/ # Recursos gráficos
-│ └── balanza.png
-├── assets/                 # Recursos gráficos usados por la GUI
-│   └── balanza.png
-├── src/
-│ ├── domain/ # Lógica de dominio (modelos, direcciones)
-│ ├── portal/ # Scraper MetroWeb
-│ ├── io/ # Exportadores Excel
-│ └── ui/ # Interfaz gráfica (GUI)
-├── tools/ # Utilidades y scripts de build
-├── selectors.yaml # Mapeo de selectores MetroWeb
-├── requirements.txt # Dependencias mínimas
-└── pyproject.toml # Configuración de build
-│   ├── cli.py              # Entrypoint de línea de comandos
-│   ├── domain/             # Modelos de dominio y helpers de direcciones
-│   ├── io/                 # Exportadores (Excel)
-│   ├── portal/             # Scraper de MetroWeb basado en Playwright
-│   ├── ui/                 # Interfaz gráfica y herramientas de merge
-│   └── version.py          # Datos de versionado de la aplicación
-├── tests/                  # Pruebas unitarias e integraciones básicas
-├── tools/                  # Utilidades de mantenimiento y build
-├── selectors.yaml          # Mapeo de selectores MetroWeb
-├── requirements.txt        # Dependencias mínimas
-└── pyproject.toml          # Configuración de build
+## Estructura del proyecto (resumen)
+- `assets/`: recursos graficos y plantilla de Excel.
+- `src/cli.py`: entrypoint CLI.
+- `src/domain/`: modelos y helpers de direcciones.
+- `src/io/`: exportadores a Excel.
+- `src/portal/`: scraper MetroWeb basado en Playwright.
+- `src/ui/`: GUI y herramientas de merge de Excel.
+- `src/version.py`: metadatos de version de la app.
+- `tools/`: scripts de soporte (`bump_version.py`, `make_release.py`, `shrink_balanza.py`); `tools/dist/` guarda los ZIP generados.
+- `tests/`: pruebas basicas.
+- `selectors.yaml`: mapeo de selectores de MetroWeb.
+- `pyproject.toml`: metadata del proyecto y versionado.
+
+## Notas
+- Ejecuta los comandos desde la raiz del repositorio para que las rutas relativas (assets, selectors) funcionen correctamente.
+- Si actualizas Playwright o los navegadores, reinstala con `python -m playwright install chromium` antes de correr la GUI.

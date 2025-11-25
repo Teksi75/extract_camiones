@@ -15,7 +15,6 @@ Ejecución recomendada:
 # --- bootstrap robusto del proyecto (permite ejecutar este archivo "a pelo") ---
 import sys
 from pathlib import Path
-from src.version import APP_VERSION
 
 
 def find_project_root(markers=("pyproject.toml", "requirements.txt", ".git")) -> Path:
@@ -30,6 +29,8 @@ def find_project_root(markers=("pyproject.toml", "requirements.txt", ".git")) ->
 ROOT = find_project_root()
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+from src.version import APP_VERSION
+
 # -------------------------------------------------------------------------------
 
 import os
