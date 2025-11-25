@@ -13,11 +13,22 @@ Ejecución recomendada:
 """
 
 # --- bootstrap robusto del proyecto (permite ejecutar este archivo "a pelo") ---
+import os
+import platform
+import re
 import sys
+import threading
+from datetime import datetime
 from pathlib import Path
+from typing import Callable, Optional
+
+import tkinter as tk
+from tkinter import filedialog, messagebox, scrolledtext, ttk
+from openpyxl import load_workbook
 
 
 def find_project_root(markers=("pyproject.toml", "requirements.txt", ".git")) -> Path:
+    """Busca la raiz del proyecto usando marcadores conocidos."""
     p = Path(__file__).resolve()
     for parent in (p.parent, *p.parents):
         if any((parent / m).exists() for m in markers):
@@ -32,17 +43,6 @@ if str(ROOT) not in sys.path:
 from src.version import APP_VERSION
 
 # -------------------------------------------------------------------------------
-
-import os
-import platform
-import re
-import threading
-from datetime import datetime
-from typing import Callable, Optional
-
-import tkinter as tk
-from tkinter import filedialog, messagebox, scrolledtext, ttk
-from openpyxl import load_workbook
 
 # ================== Config de app/estilos ==================
 
@@ -116,6 +116,7 @@ except Exception:
 
 
 def limpiar_nombre_archivo(texto: str) -> str:
+    """Normaliza un nombre de archivo reemplazando caracteres invalidos."""
     invalidos = ["<", ">", ":", '"', "/", "\\", "|", "?", "*"]
     for ch in invalidos:
         texto = texto.replace(ch, "_")
@@ -123,6 +124,7 @@ def limpiar_nombre_archivo(texto: str) -> str:
 
 
 def validar_formato_ot(ot: str) -> bool:
+    """Valida que la OT siga el patron NNN-NNNNN."""
     return bool(re.match(r"^\d{3}-\d{5}$", ot))
 
 
@@ -178,6 +180,8 @@ class ModernButton(tk.Canvas):
 
 
 class ExtractorGUI:
+    """Ventana principal para extraer datos y exportar a Excel."""
+
     def __init__(self, root: tk.Tk) -> None:
         if _MISSING_DEPS:
             messagebox.showerror(
@@ -707,6 +711,7 @@ class ExtractorGUI:
 
 # ---------- Entry-point ----------
 def main() -> None:
+    """Inicializa la aplicacion Tk y centra la ventana."""
     root = tk.Tk()
     app = ExtractorGUI(root)
 
