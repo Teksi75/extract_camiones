@@ -3,7 +3,7 @@
 GUI de extracción MetroWeb → Excel.
 
 Ajustes visuales solicitados:
-- Encabezado: "Extractor de datos (Alpha)" con versión visible.
+- Encabezado: "Extractor de datos (Beta)" con versión visible.
 - Se elimina el badge "IDLE".
 - Área de registro (log) con altura fija para evitar la "franja negra".
 - Progreso gradual igual que antes.
@@ -47,7 +47,7 @@ from src.version import APP_VERSION
 # ================== Config de app/estilos ==================
 
 APP_NAME = "INTI METROWEB"
-APP_SUBTITLE = "Extractor de datos (Alpha)"
+APP_SUBTITLE = "Extractor de datos (Beta)"
 # Versión tomada automáticamente desde pyproject.toml (src/version.py)
 # Ejemplo: APP_VERSION = "v0.4.0"
 TEMPLATE_CAMION_PATH = ROOT / "assets" / "plantilla_camion.xlsx"

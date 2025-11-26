@@ -100,7 +100,7 @@ Esto permite que GitHub reconozca la versión formalmente.
 4. Título sugerido:
 
    ```
-   EXTRACT_CAMIONES vX.Y.Z (Alpha)
+   EXTRACT_CAMIONES vX.Y.Z (Beta)
    ```
 5. En la sección **Assets**, arrastrar el ZIP generado en `dist/`
 6. Publicar con **Publish release**
