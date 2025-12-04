@@ -89,7 +89,8 @@ def build_zip() -> Path:
             except OSError:
                 pass
 
-    print(f"OK → {zip_path} ({total_bytes/1048576:.2f} MB, {len(files)} archivos)")
+    # Evitar caracteres no ASCII para no romper en consolas con cp1252
+    print(f"OK -> {zip_path} ({total_bytes/1048576:.2f} MB, {len(files)} archivos)")
     preview_heaviest(zip_path, top=15)
     return zip_path
 

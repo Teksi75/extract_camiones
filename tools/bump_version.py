@@ -54,7 +54,8 @@ def bump_patch() -> None:
 
     PYPROJECT.write_text(new_text, encoding="utf-8")
 
-    print(f"Versión actualizada: {old_version} → {new_version}")
+    # Evitar caracteres no ASCII para no romper en consolas con cp1252
+    print(f"Version actualizada: {old_version} -> {new_version}")
 
 
 if __name__ == "__main__":

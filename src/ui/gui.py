@@ -18,6 +18,9 @@ import platform
 import re
 import sys
 import threading
+import subprocess
+import xml.etree.ElementTree as ET
+import zipfile
 from datetime import datetime
 from pathlib import Path
 from typing import Callable, Optional
@@ -110,6 +113,81 @@ except Exception:
         )  # ejecución directa desde src/ui (python gui.py)
     except Exception:
         append_sheet_as_first = None
+
+
+# ================== Helpers Excel ==================
+
+
+def _mapear_hojas(xlsx_path: Path) -> dict[str, str]:
+    """Devuelve un mapa {nombre_hoja: target_xml} usando workbook.xml."""
+
+    with zipfile.ZipFile(xlsx_path) as zf:
+        wb_root = ET.fromstring(zf.read("xl/workbook.xml"))
+        rel_root = ET.fromstring(zf.read("xl/_rels/workbook.xml.rels"))
+
+    ns = {
+        "ns": "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
+        "r": "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+    }
+    rels = {
+        rel.attrib["Id"]: rel.attrib["Target"]
+        for rel in rel_root.findall(
+            ".//{http://schemas.openxmlformats.org/officeDocument/2006/relationships}Relationship"
+        )
+    }
+
+    mapping: dict[str, str] = {}
+    for sheet in wb_root.findall("ns:sheets/ns:sheet", ns):
+        rel_id = sheet.attrib.get(
+            "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id"
+        )
+        target = rels.get(rel_id)
+        if target:
+            mapping[sheet.attrib.get("name", "")] = target
+    return mapping
+
+
+def _restaurar_hojas_desde_template(
+    *, template_path: Path, destino: Path, hojas_a_preservar: list[str]
+) -> None:
+    """
+    Reemplaza la(s) hoja(s) solicitada(s) en ``destino`` con el XML de ``template_path``.
+
+    Esto evita que se pierdan elementos no soportados por ``openpyxl`` (encabezado/pie
+    con imágenes) tras guardar el archivo.
+    """
+
+    if not hojas_a_preservar:
+        return
+
+    mapping = _mapear_hojas(template_path)
+    archivos_a_reemplazar = set()
+    for hoja in hojas_a_preservar:
+        target = mapping.get(hoja)
+        if not target:
+            continue
+        hoja_path = f"xl/{target}"
+        rel_path = f"xl/worksheets/_rels/{Path(target).name}.rels"
+        archivos_a_reemplazar.add(hoja_path)
+        archivos_a_reemplazar.add(rel_path)
+
+    if not archivos_a_reemplazar:
+        return
+
+    tmp_path = destino.with_suffix(".tmp.xlsx")
+    with (
+        zipfile.ZipFile(destino, "r") as z_out,
+        zipfile.ZipFile(template_path, "r") as z_tpl,
+        zipfile.ZipFile(tmp_path, "w") as z_new,
+    ):
+        for nombre in z_out.namelist():
+            if nombre in archivos_a_reemplazar and nombre in z_tpl.namelist():
+                data = z_tpl.read(nombre)
+            else:
+                data = z_out.read(nombre)
+            z_new.writestr(nombre, data)
+
+    tmp_path.replace(destino)
 
 
 # ================== Utilidades ==================
@@ -206,11 +284,18 @@ class ExtractorGUI:
         self.var_pass = tk.StringVar()
         self.var_ot = tk.StringVar()
         self.var_headless = tk.BooleanVar(value=True)
+        self._dev_mode = False
 
         # Widgets
         self.lbl_prog: tk.Label
         self.progress: ttk.Progressbar
         self.txt_log: scrolledtext.ScrolledText
+        self.btn_dev_toggle: ttk.Button
+        self.dev_section: tk.Frame | None = None
+        self.dev_card: tk.Frame | None = None
+        self.btn_dev_bump: ttk.Button | None = None
+        self.btn_dev_release: ttk.Button | None = None
+        self._dev_card_pack_opts: dict[str, object] = {}
 
         self._build()
 
@@ -220,6 +305,19 @@ class ExtractorGUI:
 
         container = tk.Frame(self.root, bg=BG)
         container.pack(fill="both", expand=True, padx=18, pady=12)
+
+        # Herramientas para desarrollador (seccion propia para que aparezca en el lugar correcto)
+        self.dev_section = tk.Frame(container, bg=BG)
+        self.dev_section.pack(fill="x", pady=(0, 8))
+        dev_toggle = tk.Frame(self.dev_section, bg=BG)
+        dev_toggle.pack(fill="x")
+        self.btn_dev_toggle = ttk.Button(
+            dev_toggle,
+            text="Modo desarrollador",
+            command=self._toggle_dev_mode,
+        )
+        self.btn_dev_toggle.pack(anchor="w", padx=14)
+        self._build_dev_card(self.dev_section)
 
         # Credenciales
         card_cred = self._card(container, "🔐 Credenciales de acceso")
@@ -393,6 +491,38 @@ class ExtractorGUI:
             pady=4,
         ).pack()
 
+    def _build_dev_card(self, parent: tk.Widget) -> None:
+        self.dev_card = self._card(parent, "Herramientas para desarrollador")
+        tk.Label(
+            self.dev_card,
+            text="Opciones avanzadas para crear releases. Usalas solo si sabes lo que haces.",
+            bg=CARD,
+            fg="#444",
+        ).pack(anchor="w", padx=14, pady=(10, 6))
+
+        btn_wrap = tk.Frame(self.dev_card, bg=CARD)
+        btn_wrap.pack(fill="x", pady=(0, 6))
+
+        self.btn_dev_bump = ttk.Button(
+            btn_wrap,
+            text="Subir version (bump patch)",
+            command=self._start_bump_version,
+            state=tk.DISABLED,
+        )
+        self.btn_dev_bump.pack(anchor="w", padx=14, pady=(0, 6))
+
+        self.btn_dev_release = ttk.Button(
+            btn_wrap,
+            text="Generar copia / release ZIP",
+            command=self._start_make_release,
+            state=tk.DISABLED,
+        )
+        self.btn_dev_release.pack(anchor="w", padx=14, pady=(0, 10))
+
+        self._dev_card_pack_opts = {"fill": "x", "pady": (6, 8)}
+        if self.dev_card:
+            self.dev_card.pack_forget()
+
     def _card(self, parent: tk.Widget, title: str) -> tk.Frame:
         card = tk.Frame(
             parent, bg=CARD, highlightbackground="#ddd", highlightthickness=1
@@ -443,6 +573,119 @@ class ExtractorGUI:
 
     def _enable_ui(self, enabled: bool) -> None:
         self.btn_run.set_enabled(enabled)
+
+    # ---------- Herramientas de desarrollo ----------
+    def _toggle_dev_mode(self) -> None:
+        self._dev_mode = not self._dev_mode
+        if self.dev_card:
+            if self._dev_mode:
+                self.dev_card.pack(**self._dev_card_pack_opts)
+                self.btn_dev_toggle.config(text="Cerrar modo desarrollador")
+            else:
+                self.dev_card.pack_forget()
+                self.btn_dev_toggle.config(text="Modo desarrollador")
+        self._set_dev_actions_enabled(self._dev_mode)
+
+    def _set_dev_actions_enabled(self, enabled: bool) -> None:
+        state = tk.NORMAL if enabled else tk.DISABLED
+        if self.btn_dev_bump:
+            self.btn_dev_bump.config(state=state)
+        if self.btn_dev_release:
+            self.btn_dev_release.config(state=state)
+
+    def _run_dev_task(self, target: Callable[[], None]) -> None:
+        def runner() -> None:
+            try:
+                self._set_dev_actions_enabled(False)
+                target()
+            finally:
+                self._set_dev_actions_enabled(self._dev_mode)
+
+        threading.Thread(target=runner, daemon=True).start()
+
+    def _leer_version_pyproject(self) -> str | None:
+        pyproject = ROOT / "pyproject.toml"
+        if not pyproject.exists():
+            return None
+        m = re.search(
+            r'(?m)^\s*version\s*=\s*["\']([^"\']+)["\']',
+            pyproject.read_text(encoding="utf-8"),
+        )
+        if m:
+            return m.group(1)
+        return None
+
+    def _start_bump_version(self) -> None:
+        self._run_dev_task(self._bump_version)
+
+    def _bump_version(self) -> None:
+        before = self._leer_version_pyproject()
+        self._log("[DEV] Ejecutando tools.bump_version...")
+        result = subprocess.run(
+            [sys.executable, "-m", "tools.bump_version"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        )
+        for line in result.stdout.splitlines():
+            self._log(f"[bump] {line}")
+        for line in result.stderr.splitlines():
+            self._log(f"[bump][err] {line}")
+
+        if result.returncode == 0:
+            after = self._leer_version_pyproject()
+            mensaje = f"Version actualizada: {before or '-'} -> {after or '-'}"
+            messagebox.showinfo("Version actualizada", mensaje)
+        else:
+            messagebox.showerror(
+                "Error al actualizar version",
+                f"El comando devolvio {result.returncode}. Revisar el log de errores.",
+            )
+
+    def _start_make_release(self) -> None:
+        self._run_dev_task(self._make_release)
+
+    def _collect_dist_zips(self) -> set[Path]:
+        dist = ROOT / "tools" / "dist"
+        if not dist.exists():
+            return set()
+        return set(dist.glob("*.zip"))
+
+    def _make_release(self) -> None:
+        prev = self._collect_dist_zips()
+        self._log("[DEV] Generando release (copia ZIP)...")
+        result = subprocess.run(
+            [sys.executable, "-m", "tools.make_release"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        )
+        for line in result.stdout.splitlines():
+            self._log(f"[release] {line}")
+        for line in result.stderr.splitlines():
+            self._log(f"[release][err] {line}")
+
+        if result.returncode == 0:
+            nuevos = self._collect_dist_zips() - prev
+            zip_generado = None
+            if nuevos:
+                zip_generado = max(nuevos, key=lambda p: p.stat().st_mtime)
+            if zip_generado:
+                mensaje = (
+                    "Copia generada en tools/dist:\n"
+                    f"{zip_generado.resolve()}"
+                )
+                self._log(f"Release creado: {zip_generado.resolve()}")
+            else:
+                mensaje = (
+                    "Release finalizado. Revisa tools/dist para ver el ZIP generado."
+                )
+            messagebox.showinfo("Release generado", mensaje)
+        else:
+            messagebox.showerror(
+                "Error al generar release",
+                f"El comando devolvio {result.returncode}. Revisar el log de errores.",
+            )
 
     # ---------- Validaciones ----------
     def _validate(self) -> bool:
@@ -607,6 +850,11 @@ class ExtractorGUI:
         destino = destino.with_suffix(".xlsx")
         destino.parent.mkdir(parents=True, exist_ok=True)
         wb.save(destino)
+        _restaurar_hojas_desde_template(
+            template_path=template_path,
+            destino=destino,
+            hojas_a_preservar=["Informe"],
+        )
         return destino
 
     # ---------- Anexar a Excel base (botón) ----------
