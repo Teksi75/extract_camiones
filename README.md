@@ -1,6 +1,6 @@
 # Extractor de datos MetroWeb -> Excel (INTI)
 
-Version actual: 0.4.4
+Version actual: 0.4.14 (segun `pyproject.toml`)
 Autor: Pablo J. Siklosi
 
 Aplicacion en Python para extraer automaticamente los datos de Verificacion Previa desde el portal MetroWeb (INTI) y volcarlos en un Excel estructurado. Incluye un flujo GUI con barra de progreso y logs en vivo, y utilidades para versionar y generar releases distribuidos.
@@ -26,7 +26,7 @@ Aplicacion en Python para extraer automaticamente los datos de Verificacion Prev
 - Se abrira la interfaz grafica para lanzar el scraping y generar el Excel usando la plantilla de `assets/`.
 
 ### Scripts de mantenimiento
-- `python -m tools.bump_version`: incrementa en +1 el ultimo componente de `version` en `pyproject.toml` (por ejemplo, 0.4.4 -> 0.4.5). Ejecutalo siempre desde la raiz del repo.
+- `python -m tools.bump_version`: incrementa en +1 el ultimo componente de `version` en `pyproject.toml` (por ejemplo, 0.4.14 -> 0.4.15). Ejecutalo siempre desde la raiz del repo.
 - `python -m tools.make_release`: genera un ZIP listo para distribuir dentro de `tools/dist/`, excluyendo tests y artefactos temporales. Usa la version de `pyproject.toml` para nombrar el archivo.
 
 ### Flujo de release sugerido
