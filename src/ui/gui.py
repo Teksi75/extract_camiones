@@ -206,6 +206,17 @@ def validar_formato_ot(ot: str) -> bool:
     return bool(re.match(r"^\d{3}-\d{5}$", ot))
 
 
+def validar_fecha_ddmmaaaa(fecha: str) -> bool:
+    """Valida fechas en formato dd/mm/aaaa (ej. 16/12/2025)."""
+    if not re.match(r"^\d{2}/\d{2}/\d{4}$", fecha):
+        return False
+    try:
+        datetime.strptime(fecha, "%d/%m/%Y")
+    except ValueError:
+        return False
+    return True
+
+
 class ModernButton(tk.Canvas):
     def __init__(
         self,
@@ -283,6 +294,7 @@ class ExtractorGUI:
         self.var_user = tk.StringVar()
         self.var_pass = tk.StringVar()
         self.var_ot = tk.StringVar()
+        self.var_fecha_estimada = tk.StringVar()
         self.var_headless = tk.BooleanVar(value=True)
         self._dev_mode = False
 
@@ -327,6 +339,7 @@ class ExtractorGUI:
         # OT
         card_ot = self._card(container, "📋 Orden de Trabajo")
         self._entry(card_ot, "Número de OT (ej. 307-62136)", self.var_ot)
+        self._build_fecha_estimada_input(card_ot)
         chk = tk.Checkbutton(
             card_ot,
             text="Ejecutar en modo oculto (headless)",
@@ -556,6 +569,35 @@ class ExtractorGUI:
         )
         e.pack(fill="x", padx=8, pady=8)
 
+    def _build_fecha_estimada_input(self, parent: tk.Widget) -> None:
+        wrap = tk.Frame(parent, bg=CARD)
+        wrap.pack(fill="x", padx=14, pady=8)
+        tk.Label(
+            wrap,
+            text="Fecha estimada de verificación (dd/mm/aaaa):",
+            bg=CARD,
+            fg="#555",
+        ).pack(anchor="w", pady=(0, 4))
+
+        row = tk.Frame(wrap, bg=CARD)
+        row.pack(fill="x")
+
+        border = tk.Frame(
+            row, bg="#ccc", highlightbackground="#ccc", highlightthickness=1
+        )
+        border.pack(side="left", fill="x", expand=True)
+        tk.Entry(
+            border,
+            textvariable=self.var_fecha_estimada,
+            bg="white",
+            relief="flat",
+            font=("Segoe UI", 10),
+        ).pack(fill="x", padx=8, pady=8)
+
+        ttk.Button(
+            row, text="Pegar fecha", command=self._pegar_fecha_desde_clipboard
+        ).pack(side="left", padx=(8, 0))
+
     # ---------- UX helpers ----------
     def _log(self, msg: str) -> None:
         self.txt_log.config(state="normal")
@@ -573,6 +615,22 @@ class ExtractorGUI:
 
     def _enable_ui(self, enabled: bool) -> None:
         self.btn_run.set_enabled(enabled)
+
+    def _pegar_fecha_desde_clipboard(self) -> None:
+        try:
+            contenido = self.root.clipboard_get()
+        except Exception:
+            messagebox.showwarning(
+                "Portapapeles vacío", "No se pudo leer el portapapeles."
+            )
+            return
+
+        texto = str(contenido).strip()
+        if "\n" in texto:
+            texto = texto.splitlines()[0].strip()
+        if "\t" in texto:
+            texto = texto.split("\t", 1)[0].strip()
+        self.var_fecha_estimada.set(texto)
 
     # ---------- Herramientas de desarrollo ----------
     def _toggle_dev_mode(self) -> None:
@@ -709,6 +767,13 @@ class ExtractorGUI:
                 f"El formato '{ot}' no es XXX-XXXXX.\n¿Deseas continuar de todas formas?",
             ):
                 return False
+        fecha_estimada = self.var_fecha_estimada.get().strip()
+        if fecha_estimada and not validar_fecha_ddmmaaaa(fecha_estimada):
+            messagebox.showerror(
+                "Fecha inválida",
+                "La fecha estimada debe tener formato dd/mm/aaaa (ej. 16/12/2025).",
+            )
+            return False
         return True
 
     # ---------- Flujo principal ----------
@@ -831,6 +896,31 @@ class ExtractorGUI:
 
         ws = wb["datos vpe"]
         instrumento = dict(self._filas[0])
+        campo_fecha_estimada = "Fecha estimada de verificación"
+        instrumento[campo_fecha_estimada] = self.var_fecha_estimada.get().strip()
+
+        def _asegurar_fila_fecha() -> None:
+            for row in ws.iter_rows(min_row=1, max_row=ws.max_row, max_col=1):
+                if row[0].value and str(row[0].value) == campo_fecha_estimada:
+                    return
+
+            style_col1 = None
+            style_col2 = None
+            if ws.max_row >= 2:
+                template_row = list(ws.iter_rows(min_row=2, max_row=2, max_col=2))[0]
+                style_col1 = template_row[0]._style
+                if len(template_row) > 1:
+                    style_col2 = template_row[1]._style
+
+            ws.insert_rows(2)
+            cell_campo = ws.cell(row=2, column=1, value=campo_fecha_estimada)
+            cell_valor = ws.cell(row=2, column=2, value="")
+            if style_col1:
+                cell_campo._style = style_col1
+            if style_col2:
+                cell_valor._style = style_col2
+
+        _asegurar_fila_fecha()
 
         # Normalizar fechas relevantes al formato castellano esperado
         for campo in DATE_FIELDS:
