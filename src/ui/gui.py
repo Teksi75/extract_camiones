@@ -23,7 +23,7 @@ import xml.etree.ElementTree as ET
 import zipfile
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Any, Callable, Mapping, Optional, cast
 
 import tkinter as tk
 from tkinter import filedialog, messagebox, scrolledtext, ttk
@@ -307,7 +307,7 @@ class ExtractorGUI:
         self.dev_card: tk.Frame | None = None
         self.btn_dev_bump: ttk.Button | None = None
         self.btn_dev_release: ttk.Button | None = None
-        self._dev_card_pack_opts: dict[str, object] = {}
+        self._dev_card_pack_opts: dict[str, Any] = {}
 
         self._build()
 
@@ -548,7 +548,7 @@ class ExtractorGUI:
         return card
 
     def _entry(
-        self, parent: tk.Widget, label: str, var: tk.StringVar, show: str | None = None
+        self, parent: tk.Widget, label: str, var: tk.StringVar, show: str = ""
     ) -> None:
         wrap = tk.Frame(parent, bg=CARD)
         wrap.pack(fill="x", padx=14, pady=8)
@@ -637,7 +637,7 @@ class ExtractorGUI:
         self._dev_mode = not self._dev_mode
         if self.dev_card:
             if self._dev_mode:
-                self.dev_card.pack(**self._dev_card_pack_opts)
+                self.dev_card.pack(**cast(Mapping[str, Any], self._dev_card_pack_opts))
                 self.btn_dev_toggle.config(text="Cerrar modo desarrollador")
             else:
                 self.dev_card.pack_forget()
@@ -729,10 +729,7 @@ class ExtractorGUI:
             if nuevos:
                 zip_generado = max(nuevos, key=lambda p: p.stat().st_mtime)
             if zip_generado:
-                mensaje = (
-                    "Copia generada en tools/dist:\n"
-                    f"{zip_generado.resolve()}"
-                )
+                mensaje = "Copia generada en tools/dist:\n" f"{zip_generado.resolve()}"
                 self._log(f"Release creado: {zip_generado.resolve()}")
             else:
                 mensaje = (
@@ -933,9 +930,8 @@ class ExtractorGUI:
             if campo is None:
                 continue
             valor = instrumento.get(str(campo), "")
-            if valor is None:
-                valor = ""
-            ws.cell(row=cell_campo.row, column=2, value=valor)
+            valor_str = "" if valor is None else str(valor)
+            ws.cell(row=cell_campo.row, column=2, value=valor_str)  # type: ignore[arg-type]
 
         destino = destino.with_suffix(".xlsx")
         destino.parent.mkdir(parents=True, exist_ok=True)
