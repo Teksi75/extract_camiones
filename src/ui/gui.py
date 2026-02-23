@@ -15,6 +15,7 @@ Ejecución recomendada:
 # --- bootstrap robusto del proyecto (permite ejecutar este archivo "a pelo") ---
 import os
 import platform
+import queue
 import re
 import sys
 import threading
@@ -308,8 +309,10 @@ class ExtractorGUI:
         self.btn_dev_bump: ttk.Button | None = None
         self.btn_dev_release: ttk.Button | None = None
         self._dev_card_pack_opts: dict[str, Any] = {}
+        self._ui_jobs: queue.Queue[Callable[[], None]] = queue.Queue()
 
         self._build()
+        self.root.after(50, self._drain_ui_jobs)
 
     # ---------- UI construction ----------
     def _build(self) -> None:
@@ -599,7 +602,39 @@ class ExtractorGUI:
         ).pack(side="left", padx=(8, 0))
 
     # ---------- UX helpers ----------
+    @staticmethod
+    def _is_ui_thread() -> bool:
+        return threading.current_thread() is threading.main_thread()
+
+    def _run_ui(self, callback: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
+        if self._is_ui_thread():
+            callback(*args, **kwargs)
+            return
+
+        def _job() -> None:
+            callback(*args, **kwargs)
+
+        self._ui_jobs.put(_job)
+
+    def _drain_ui_jobs(self) -> None:
+        try:
+            while True:
+                job = self._ui_jobs.get_nowait()
+                job()
+        except queue.Empty:
+            pass
+        finally:
+            try:
+                self.root.after(50, self._drain_ui_jobs)
+            except tk.TclError:
+                # La ventana ya fue destruida.
+                return
+
     def _log(self, msg: str) -> None:
+        if not self._is_ui_thread():
+            self._run_ui(self._log, msg)
+            return
+
         self.txt_log.config(state="normal")
         ts = datetime.now().strftime("%H:%M:%S")
         self.txt_log.insert("end", f"[{ts}] {msg}\n")
@@ -608,12 +643,20 @@ class ExtractorGUI:
         self.root.update_idletasks()
 
     def _set_progress_pct(self, pct: float, label: str) -> None:
+        if not self._is_ui_thread():
+            self._run_ui(self._set_progress_pct, pct, label)
+            return
+
         pct = max(0.0, min(100.0, pct))
         self.progress["value"] = pct
         self.lbl_prog.config(text=f"{label} ({pct:.0f}%)")
         self.root.update_idletasks()
 
     def _enable_ui(self, enabled: bool) -> None:
+        if not self._is_ui_thread():
+            self._run_ui(self._enable_ui, enabled)
+            return
+
         self.btn_run.set_enabled(enabled)
 
     def _pegar_fecha_desde_clipboard(self) -> None:
@@ -645,6 +688,10 @@ class ExtractorGUI:
         self._set_dev_actions_enabled(self._dev_mode)
 
     def _set_dev_actions_enabled(self, enabled: bool) -> None:
+        if not self._is_ui_thread():
+            self._run_ui(self._set_dev_actions_enabled, enabled)
+            return
+
         state = tk.NORMAL if enabled else tk.DISABLED
         if self.btn_dev_bump:
             self.btn_dev_bump.config(state=state)
@@ -693,9 +740,10 @@ class ExtractorGUI:
         if result.returncode == 0:
             after = self._leer_version_pyproject()
             mensaje = f"Version actualizada: {before or '-'} -> {after or '-'}"
-            messagebox.showinfo("Version actualizada", mensaje)
+            self._run_ui(messagebox.showinfo, "Version actualizada", mensaje)
         else:
-            messagebox.showerror(
+            self._run_ui(
+                messagebox.showerror,
                 "Error al actualizar version",
                 f"El comando devolvio {result.returncode}. Revisar el log de errores.",
             )
@@ -735,9 +783,10 @@ class ExtractorGUI:
                 mensaje = (
                     "Release finalizado. Revisa tools/dist para ver el ZIP generado."
                 )
-            messagebox.showinfo("Release generado", mensaje)
+            self._run_ui(messagebox.showinfo, "Release generado", mensaje)
         else:
-            messagebox.showerror(
+            self._run_ui(
+                messagebox.showerror,
                 "Error al generar release",
                 f"El comando devolvio {result.returncode}. Revisar el log de errores.",
             )
@@ -782,15 +831,16 @@ class ExtractorGUI:
         self.txt_log.config(state="disabled")
         self._set_progress_pct(0, "Preparando…")
         self._enable_ui(False)
-        threading.Thread(target=self._run, daemon=True).start()
+        user = self.var_user.get().strip()
+        pwd = self.var_pass.get().strip()
+        ot = self.var_ot.get().strip()
+        headless = self.var_headless.get()
+        threading.Thread(
+            target=self._run, args=(user, pwd, ot, headless), daemon=True
+        ).start()
 
-    def _run(self) -> None:
+    def _run(self, user: str, pwd: str, ot: str, headless: bool) -> None:
         try:
-            user = self.var_user.get().strip()
-            pwd = self.var_pass.get().strip()
-            ot = self.var_ot.get().strip()
-            headless = self.var_headless.get()
-
             self._set_progress_pct(5, "Iniciando…")
             self._log("Conectando a MetroWeb…")
 
@@ -812,7 +862,8 @@ class ExtractorGUI:
 
             if not self._filas:
                 self._log("No se encontraron instrumentos en la OT.")
-                messagebox.showwarning(
+                self._run_ui(
+                    messagebox.showwarning,
                     "Sin datos", "No se encontraron instrumentos para la OT indicada."
                 )
                 return
@@ -824,11 +875,11 @@ class ExtractorGUI:
             )
             self._set_progress_pct(100, "Extracción completa")
             self._log(f"Extracción completa: {len(self._filas)} instrumento(s).")
-            self.root.after(200, self._save_dialog)
+            self._run_ui(self.root.after, 200, self._save_dialog)
 
         except Exception as e:  # pragma: no cover (UI)
             self._log(f"ERROR: {e}")
-            messagebox.showerror("Error en la extracción", str(e))
+            self._run_ui(messagebox.showerror, "Error en la extracción", str(e))
         finally:
             self._enable_ui(True)
 
