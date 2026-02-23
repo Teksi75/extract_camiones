@@ -36,7 +36,6 @@ Aplicacion en Python para extraer automaticamente los datos preliminares de Veri
 
 ## Estructura del proyecto (resumen)
 - `assets/`: recursos graficos y plantilla de Excel.
-- `src/cli.py`: entrypoint CLI. (descontinuado, se evaluará si se vuelve a utilizar o se saca definitivamente)
 - `src/domain/`: modelos y helpers de direcciones.
 - `src/io/`: exportadores a Excel.
 - `src/portal/`: scraper MetroWeb basado en Playwright.
