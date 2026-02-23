@@ -14,3 +14,7 @@ ignore = ["ANN101"]
 
 [tool.mypy]
 strict = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-p no:cacheprovider -p no:tmpdir"
