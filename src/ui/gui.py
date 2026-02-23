@@ -87,6 +87,7 @@ try:
     from src.io.excel_exporter import (
         DATE_FIELDS,
         armar_hoja_verificacion_2columnas,
+        exportar_verificacion_2columnas,
         _fecha_castellano,
     )
 except Exception as _e:  # pragma: no cover
@@ -189,6 +190,23 @@ def _restaurar_hojas_desde_template(
             z_new.writestr(nombre, data)
 
     tmp_path.replace(destino)
+
+
+def exportar_excel_detalle_instrumentos(
+    filas: list[dict[str, str]], destino_principal: Path
+) -> Path | None:
+    """
+    Si hay más de un instrumento, genera un segundo Excel con el detalle de todos.
+    Devuelve la ruta creada o None si no corresponde exportar.
+    """
+    if len(filas) <= 1:
+        return None
+
+    df = armar_hoja_verificacion_2columnas(filas)
+    ruta_detalle = destino_principal.with_name(
+        f"{destino_principal.stem}_instrumentos{destino_principal.suffix}"
+    )
+    return exportar_verificacion_2columnas(df, ruta_detalle)
 
 
 # ================== Utilidades ==================
@@ -910,12 +928,21 @@ class ExtractorGUI:
             ruta = self._exportar_en_plantilla(Path(path))
             size_kb = ruta.stat().st_size / 1024
             self._log(f"Archivo guardado: {ruta.resolve()} ({size_kb:.2f} KB)")
+            ruta_detalle = exportar_excel_detalle_instrumentos(self._filas, ruta)
+            detalle_msg = ""
+            if ruta_detalle:
+                detalle_kb = ruta_detalle.stat().st_size / 1024
+                self._log(
+                    f"Archivo adicional (instrumentos): {ruta_detalle.resolve()} ({detalle_kb:.2f} KB)"
+                )
+                detalle_msg = f"Excel adicional: {ruta_detalle.name}\n"
 
             if messagebox.askyesno(
                 "Éxito",
                 f"Archivo creado:\n\n{ruta.name}\n"
                 f"Instrumentos: {len(self._filas)}\n"
-                f"Tamaño: {size_kb:.2f} KB\n\n"
+                f"Tamaño: {size_kb:.2f} KB\n"
+                f"{detalle_msg}\n"
                 "¿Abrir la carpeta contenedora?",
             ):
                 self._open_folder(ruta.parent)
