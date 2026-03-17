@@ -882,7 +882,8 @@ class ExtractorGUI:
                 self._log("No se encontraron instrumentos en la OT.")
                 self._run_ui(
                     messagebox.showwarning,
-                    "Sin datos", "No se encontraron instrumentos para la OT indicada."
+                    "Sin datos",
+                    "No se encontraron instrumentos para la OT indicada.",
                 )
                 return
 
