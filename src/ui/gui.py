@@ -646,7 +646,7 @@ class ExtractorGUI:
                 self.root.after(50, self._drain_ui_jobs)
             except tk.TclError:
                 # La ventana ya fue destruida.
-                return
+                pass
 
     def _log(self, msg: str) -> None:
         if not self._is_ui_thread():

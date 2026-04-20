@@ -212,3 +212,6 @@ __marimo__/
 /tmp/
 /.pytest_tmp/
 /pytest-cache-files-*/
+/.vscode/settings.json
+/iniciar_gui.bat
+/run_gui.py
