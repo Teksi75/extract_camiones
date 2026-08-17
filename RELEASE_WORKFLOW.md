@@ -1,8 +1,3 @@
-Perfecto Pablo.
-Acá tenés el **checklist profesional**, listo para pegar directamente en tu repo como `RELEASE_WORKFLOW.md` o dentro del README en una sección final.
-
----
-
 # 📝 **Checklist para generar una nueva versión (release)**
 
 Este es el procedimiento oficial para crear una nueva versión del proyecto **extract_camiones** usando el flujo automatizado de versiones y empaquetado.
@@ -71,7 +66,7 @@ git add pyproject.toml
 ```
 
 Subir a GitHub:
-
+Ejemplo
 ```bash
 git pushgit commit -m "Bump version
 ```

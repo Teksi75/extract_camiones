@@ -729,10 +729,7 @@ class ExtractorGUI:
             if nuevos:
                 zip_generado = max(nuevos, key=lambda p: p.stat().st_mtime)
             if zip_generado:
-                mensaje = (
-                    "Copia generada en tools/dist:\n"
-                    f"{zip_generado.resolve()}"
-                )
+                mensaje = "Copia generada en tools/dist:\n" f"{zip_generado.resolve()}"
                 self._log(f"Release creado: {zip_generado.resolve()}")
             else:
                 mensaje = (
